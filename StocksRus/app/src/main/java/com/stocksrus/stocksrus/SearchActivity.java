@@ -13,7 +13,9 @@ import android.widget.AutoCompleteTextView;
 
 public class SearchActivity extends AppCompatActivity {
 
-    String[] COMPANIES = new String[100];
+    String[] COMPANIES = new String[] {
+            "Facebook", "Amazon", "Rackspace", "Apple", "Google", "Yum Incorporated"
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,7 +40,7 @@ public class SearchActivity extends AppCompatActivity {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
                 android.R.layout.simple_dropdown_item_1line, COMPANIES);
         AutoCompleteTextView textView = (AutoCompleteTextView)
-                findViewById(R.id.countries_list);
+                findViewById(R.id.autoCompleteTextView);
         textView.setAdapter(adapter);
     }
 }
