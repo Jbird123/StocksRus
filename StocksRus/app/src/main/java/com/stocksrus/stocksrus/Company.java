@@ -20,9 +20,11 @@ import cz.msebera.android.httpclient.Header;
 public class Company {
 
     private String cik;
+    private String viewName;
 
-    public Company(String cik) {
-        this.cik = cik;
+    public Company(String companyName) {
+        this.viewName = companyName;
+        this.cik = CompanyDB.getCIKByCompanyName(companyName);
     }
 
     public void getDocuments(final ProgressDialog toShow, Form type, final Vector<JSONObject> documents) {
