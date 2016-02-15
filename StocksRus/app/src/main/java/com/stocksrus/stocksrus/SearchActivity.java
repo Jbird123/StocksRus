@@ -17,19 +17,11 @@ import android.widget.AutoCompleteTextView;
 import android.widget.RelativeLayout;
 import android.widget.ToggleButton;
 
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
-
-import cz.msebera.android.httpclient.Header;
-import com.loopj.android.http.*;
-
 import java.util.Vector;
 
 public class SearchActivity extends AppCompatActivity {
 
     final private int MAX_LIMIT = CompanyClient.MAX_COMPANY_LIMIT;
-    Vector<String> companies = new Vector<String>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -57,7 +49,7 @@ public class SearchActivity extends AppCompatActivity {
 
     public AutoCompleteTextView createSearchViews() {
         ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
-                android.R.layout.simple_dropdown_item_1line, companies);
+                android.R.layout.simple_dropdown_item_1line, CompanyDB.getAllCompanies());
         final AutoCompleteTextView textView = (AutoCompleteTextView)
                 findViewById(R.id.autoCompleteTextView);
         textView.setAdapter(adapter);
@@ -66,8 +58,7 @@ public class SearchActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 closeKeyboard();
-                String[] viewText = textView.getText().toString().split("\t");
-                Company selected = new Company(viewText[viewText.length - 1]);
+                Company selected = new Company(textView.getText().toString());
                 final ProgressDialog dialog = putUpLoadingDialog("Getting company forms info...");
                 final Vector<Form> forms = new Vector<Form>();
                 dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
@@ -84,7 +75,7 @@ public class SearchActivity extends AppCompatActivity {
 
     private void closeKeyboard() {
         InputMethodManager inputManager = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
-        inputManager.hideSoftInputFromWindow((null == getCurrentFocus()) ?
+        inputManager.hideSoftInputFromWindow((getCurrentFocus() == null) ?
                 null : getCurrentFocus().getWindowToken(), InputMethodManager.HIDE_NOT_ALWAYS);
     }
 
@@ -98,13 +89,6 @@ public class SearchActivity extends AppCompatActivity {
             Form form = forms.get(i);
             final ToggleButtonGroup tbGroup = new ToggleButtonGroup();
             ToggleButton button = new ToggleButton(getApplicationContext());
-            button.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    tbGroup.onClick(v);
-
-                }
-            });
             button.setText(form.toString());
             button.setTextOn(form.toString());
             button.setTextOff(form.toString());
@@ -120,6 +104,13 @@ public class SearchActivity extends AppCompatActivity {
             button.setId(i + 2);
             prevButton = button.getId();
             tbGroup.add(button);
+            button.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    tbGroup.onClick(v);
+
+                }
+            });
             rL.addView(button);
         }
     }
@@ -134,33 +125,14 @@ public class SearchActivity extends AppCompatActivity {
     }
 
     private void initializeCompanySearch() {
-        final ProgressDialog dialog = putUpLoadingDialog("Loading companies for you...\n\nThis may take a moment," +
-                " especially the first time.");
-        companies = new Vector<String>(MAX_LIMIT);
-        int firstCompany = 0, lastCompany = 4750;
-
-        for (; lastCompany <= MAX_LIMIT; firstCompany += 4750, lastCompany += 4750) {
-            RequestParams params = new RequestParams();
-            params.put("limit", lastCompany);
-            params.put("offset", firstCompany);
-
-            CompanyClient.get("/companies", params, new JsonHttpResponseHandler() {
-                @Override
-                public void onSuccess(int statusCode, Header[] headers, JSONArray timeline) {
-                    try {
-                        for (int i = 0; i < timeline.length(); i++) {
-                            JSONObject currObj = timeline.getJSONObject(i);
-                            String label = currObj.getString("display_name") + "\t" + currObj.getString("cik");
-                            if (label.contains("null")) continue;
-                            companies.add(label);
-                        }
-                    } catch (JSONException e) {
-                        e.printStackTrace();
-                    }
-                    dialog.dismiss();
-                }
-            });
-            createSearchViews();
-        }
+        final ProgressDialog dialog = putUpLoadingDialog("Loading companies for you...\n\n" +
+                "This may take a moment," + " especially the first time.");
+        dialog.setOnDismissListener(new DialogInterface.OnDismissListener() {
+            @Override
+            public void onDismiss(DialogInterface dialog) {
+                createSearchViews();
+            }
+        });
+        CompanyDB.createDB(this, "COMPANY_DB", dialog);
     }
 }
